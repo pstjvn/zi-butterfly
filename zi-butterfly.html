@@ -9,6 +9,9 @@
         width: 300px;
         height: 300px;
         @apply --layout-horizontal;
+        animation-duration: 12s;
+        animation-iteration-count: 5;
+        animation-delay: 1s;
       }
       div {
         @apply --layout;
@@ -21,19 +24,24 @@
       svg > path { stroke-width: 0; }
       .leftside { margin-right: 1%; }
       .rightside { margin-left: 1%; }
+      .leftside, .rightside {
+        animation-duration: inherit;
+        animation-iteration-count: inherit;
+        animation-delay: inherit;
+      }
       .rightside > svg { transform-origin: 0% 50%; }
       .leftside > svg { transform-origin: 100% 50%; }
       .rightside > svg.ready {
         animation-name: wings-right;
-        animation-iteration-count: 5;
-        animation-duration: 12s;
-        animation-delay: 1s;
+        animation-duration: inherit;
+        animation-iteration-count: inherit;
+        animation-delay: inherit;
       }
       .leftside > svg.ready {
         animation-name: wings-left;
-        animation-iteration-count: 5;
-        animation-duration: 12s;
-        animation-delay: 1s;
+        animation-duration: inherit;
+        animation-iteration-count: inherit;
+        animation-delay: inherit;
       }
 
       @keyframes wings-right {
@@ -70,7 +78,8 @@
         <path class="headoverlay left" fill="#ffc30a" d="M60,0l0,40l-20,-20z"></path>
         <path class="head left" fill="#ffc30a" d="M60,0l0,40l-20,-20z"></path>
         <path class="body left" fill="#ff9c02" d="M60,40l-20,20l0,-40z"></path>
-        <path class="tailoverlay left" fill="#ff7702" d="M60,80l0,-40l-20,20z"></path>
+        <!--<path class="tailoverlay left" fill="#ff7702" d="M60,80l0,-40l-20,20z"></path>-->
+        <path class="tailoverlay left" fill="#ff7702" d="M40,60l20,20l-20,-20z"></path>
         <path class="tail left" fill="#ff7702" d="M60,40l0,40l-20,-20z"></path>
       </svg>
     </div>
@@ -101,7 +110,7 @@
         },
         reds: {
           light: '#f00000',
-          medium: '#eb2424',
+          medium: '#e00000',
           dark: '#d00000',
           black: '#b00000'
         }
@@ -112,7 +121,8 @@
       // Left side
       function phase1(snap, duration) {
         snap.select('path.tailoverlay.left').animate({
-          d: 'M60,80l-20,-20l0,40z',
+          // d: 'M60,80l-20,-20l0,40z',
+          d: 'M40,60l20,20l-20,20z',
           fill: colors.greys.light
         }, duration, timing);
 
@@ -127,16 +137,19 @@
           d: 'M60,40l-20,20l-20,-20z',
           fill: colors.greys.dark
         }, duration, timing);
-        
+
         snap.select('path.tail.left').animate({
           fill: colors.greys.black
         }, duration, timing);
-        
+
       }
 
       function phase2(snap, duration) {
+        snap.select('path.headoverlay.left').attr({
+          d: 'M40,20l-20,20l20,-20z'
+        });
         snap.select('path.headoverlay.left').animate({
-          d: 'M0,20l40,0l-20,20z',
+          d: 'M40,20l-20,20l-20,-20z',
           fill: colors.greys.light
         }, duration, timing);
       }
@@ -160,7 +173,7 @@
           d: 'M0,40l20,20l20,-20z',
           fill: colors.reds.dark
         }, duration, timing);
-        
+
         snap.select('path.tail.right').animate({
           fill: colors.reds.black
         }, duration, timing);
@@ -171,12 +184,19 @@
           d: 'M60,20l-40,0l20,20z',
           fill: colors.reds.light
         }, duration, timing, opt_callback);
+        // snap.select('path.headoverlay.right').attr({
+        //   d: 'M20,20l20,20l-20,-20z'
+        // });
+        // snap.select('path.headoverlay.right').animate({
+        //   d: 'M20,20l20,20l20,-20z',
+        //   fill: colors.reds.light
+        // }, duration, timing, opt_callback);
       }
 
       Polymer({
         is: 'zi-butterfly',
         properties: {
-          /** 
+          /**
            * Start the transformation from cacoon to butterfly automatically
            * after the initial delay is elapsed. This is enabled by default.
            */
@@ -185,7 +205,7 @@
             value: true
           },
           /**
-           * How much time we should wait to start the cacoon to imago 
+           * How much time we should wait to start the cacoon to imago
            * transformation for, in seconds. This is only used if auto is true
            * which is the default.
            */
@@ -194,7 +214,7 @@
             value: 2
           },
           /**
-           * How much time the cacoon to imago animation sould take. 
+           * How much time the cacoon to imago animation sould take.
            */
           transformationDuration: {
             type: Number,

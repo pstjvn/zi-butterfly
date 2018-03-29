@@ -22,7 +22,14 @@
       <h3>Basic zi-butterfly demo</h3>
       <demo-snippet>
         <template>
-          <zi-butterfly></zi-butterfly>
+          <style>
+            zi-butterfly {
+              animation-delay: 1000ms;
+              animation-duration: 12s;
+              animation-iteration-count: infinite;
+            }
+          </style>
+          <zi-butterfly initial-delay="1" transformation-duration="3500"></zi-butterfly>
         </template>
       </demo-snippet>
     </div>
