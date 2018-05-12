@@ -78,7 +78,6 @@
         <path class="headoverlay left" fill="#ffc30a" d="M60,0l0,40l-20,-20z"></path>
         <path class="head left" fill="#ffc30a" d="M60,0l0,40l-20,-20z"></path>
         <path class="body left" fill="#ff9c02" d="M60,40l-20,20l0,-40z"></path>
-        <!--<path class="tailoverlay left" fill="#ff7702" d="M60,80l0,-40l-20,20z"></path>-->
         <path class="tailoverlay left" fill="#ff7702" d="M40,60l20,20l-20,-20z"></path>
         <path class="tail left" fill="#ff7702" d="M60,40l0,40l-20,-20z"></path>
       </svg>
@@ -118,80 +117,225 @@
 
       var timing = mina.linear;
 
-      // Left side
-      function phase1(snap, duration) {
-        snap.select('path.tailoverlay.left').animate({
-          // d: 'M60,80l-20,-20l0,40z',
-          d: 'M40,60l20,20l-20,20z',
-          fill: colors.greys.light
-        }, duration, timing);
+      /**
+       * An array or transformation to apply SIMLULTANIOUSLY on a single
+       * snap instance.
+       * A promise will be returned upon calling the processing with such
+       * an array and the promise will be resolved once ALL simultaneous
+       * transformations complete.
+       *
+       * If you need to have continuation (i.e. execute something after the
+       * set of informations complete) you can use *.then, but if you need
+       * another animation to be trggered after A SPECIFIC animation finishes
+       * you will need to use the 'continuation' property and then the
+       * inner promise of the specific initial animation will resolved after its
+       * continuation is complete which will possibly slow down the whole
+       * promise.
+       *
+       * @interface
+       * @type {{d: string=, fill: string=}}
+       */
+      var Transformation = {}
+      /**
+       * @interface
+       * @type {{precondition: Transformation=, tranformation: Transformation=, continuation: Action=}}
+       */
+      var Action = {};
+      /**
+       * @interface
+       * @type {Object<string, Action>}
+       */
+      var Animation = {};
 
-        snap.selectAll('path.head.left, path.headoverlay.left').animate({
-          d: 'M40,20l20,20l-40,0z',
-          fill: colors.greys.medium
-        }, duration, timing, function() {
-          phase2(snap, duration);
-        });
+      var continuation1 = {
+        'path.headoverlay.left': {
+          precondition: {
+            d: 'M40,20l-20,20l20,-20z'
+          },
+          transformation: {
+            d: 'M40,20l-20,20l-20,-20z',
+            fill: colors.greys.light
+          }
+        }
+      };
+      /** @type Animation */
+      const leftside = {
+        'path.tailoverlay.left': {
+          transformation: {
+            d: 'M40,60l20,20l-20,20z',
+            fill: colors.greys.light
+          }
+        },
 
-        snap.select('path.body.left').animate({
-          d: 'M60,40l-20,20l-20,-20z',
-          fill: colors.greys.dark
-        }, duration, timing);
+        'path.tail.left': {
+          transformation: {
+            fill: colors.greys.black
+          }
+        },
 
-        snap.select('path.tail.left').animate({
-          fill: colors.greys.black
-        }, duration, timing);
+        'path.body.left': {
+          transformation: {
+            d: 'M60,40l-20,20l-20,-20z',
+            fill: colors.greys.dark
+          }
+        },
 
+        'path.head.left': {
+          transformation: {
+            d: 'M40,20l20,20l-40,0z',
+            fill: colors.greys.medium
+          }
+        },
+
+        'path.headoverlay.left': {
+          transformation: {
+            d: 'M40,20l20,20l-40,0z',
+            fill: colors.greys.medium
+          },
+          continuation: continuation1
+        },
+      };
+
+      const continuation2 = {
+        'path.headoverlay.right': {
+          transformation: {
+            d: 'M60,20l-40,0l20,20z',
+            fill: 'light'
+          }
+        }
+      };
+
+      const rightside = {
+        'path.tailoverlay.right': {
+          transformation: {
+            d: 'M0,80l20,-20l0,40z',
+            fill:'light'
+          }
+        },
+
+        'path.head.right': {
+          transformation: {
+            d: 'M20,20l-20,20l40,0z',
+            fill: 'medium'
+          }
+        },
+
+        'path.body.right': {
+          transformation: {
+            d: 'M0,40l20,20l20,-20z',
+            fill: 'dark'
+          }
+        },
+
+        'path.tail.right': {
+          transformation: {
+            fill: 'black'
+          }
+        },
+
+        'path.headoverlay.right': {
+          transformation: {
+            d: 'M20,20l-20,20l40,0z',
+            fill: 'medium'
+          },
+          continuation: continuation2
+        },
+      };
+
+      /**
+       * Helper - given an instance of ZiButterfly returns either the
+       * instance specified accent color or the default one.
+       *
+       * @param {HTMLCustomElement<ZiButterfly>} instance
+       * @param {string} type The type of color to retrieve.
+       * @return {string}
+       */
+      function getColor(instance, type) {
+        let index = 0;
+        switch(type) {
+          case 'light':
+            index = 0;
+            break;
+          case 'medium':
+            index = 1;
+            break;
+          case 'dark':
+            index = 2;
+            break;
+          case 'black':
+            index = 3;
+            break;
+          default: throw new Error('Unknown type');
+        }
+        if (instance.accentColors) {
+          return instance.accentColors[index];
+        } else return colors.reds[type];
       }
 
-      function phase2(snap, duration) {
-        snap.select('path.headoverlay.left').attr({
-          d: 'M40,20l-20,20l20,-20z'
-        });
-        snap.select('path.headoverlay.left').animate({
-          d: 'M40,20l-20,20l-20,-20z',
-          fill: colors.greys.light
-        }, duration, timing);
+
+      /**
+       * Given a transformation config applied the transformations without
+       * animation (i.e. directly).
+       *
+       * @param {Animaion} steps
+       * @param {SVGHTMLElement} element
+       */
+      function runWithoutAnimation(steps, element) {
+        const snap = Snap(element);
+        for (let selector in steps) {
+          const wrapper = snap.select(selector);
+          const config = steps[selector];
+          if (config.transformation) {
+            wrapper.attr(config.transformation);
+          } else if (config.precondition) {
+            wrapper.attr(config.precondition);
+          }
+          if (config.continuation) {
+            runWithoutAnimation(config.continuation, element);
+          }
+        }
       }
 
-
-      // Right side
-      function phase3(snap, duration, opt_callback) {
-        snap.select('path.tailoverlay.right').animate({
-          d: 'M0,80l20,-20l0,40z',
-          fill: colors.reds.light
-        }, duration, timing);
-
-        snap.selectAll('path.head.right, path.headoverlay.right').animate({
-          d: 'M20,20l-20,20l40,0z',
-          fill: colors.reds.medium
-        }, duration, timing, function() {
-          phase4(snap, duration, opt_callback);
-        });
-
-        snap.select('path.body.right').animate({
-          d: 'M0,40l20,20l20,-20z',
-          fill: colors.reds.dark
-        }, duration, timing);
-
-        snap.select('path.tail.right').animate({
-          fill: colors.reds.black
-        }, duration, timing);
+      /**
+       * Given a configuration of steps to execute, creates a list of promises
+       * that will resolve when all is done.
+       *
+       * @param {Animation} steps
+       * @param {HTMLSVGElement} element
+       * @param {number} duration
+       * @return {Promise}
+       */
+      function runAnimation(steps, element, duration) {
+        const snap = Snap(element);
+        const promises = [];
+        for (let selector in steps) {
+          const wrapper = snap.select(selector);
+          const config = steps[selector];
+          promises.push(new Promise(function(resolve, reject) {
+            if (config.transformation) {
+              if (config.precondition) wrapper.attr(config.precondition);
+              wrapper.animate(
+                  config.transformation,
+                  config.duration || duration || 1000,
+                  timing,
+                  (config.continuation ?
+                      function() {
+                        runAnimation(config.continuation, element, duration).then(function() {
+                          resolve();
+                        })
+                      } : function() {
+                        resolve();
+                      })
+                  );
+            } else {
+              if (config.precondition) wrapper.attr(config.precondition);
+              resolve();
+            }
+          }));
+        }
+        return Promise.all(promises);
       }
 
-      function phase4(snap, duration, opt_callback) {
-        snap.select('path.headoverlay.right').animate({
-          d: 'M60,20l-40,0l20,20z',
-          fill: colors.reds.light
-        }, duration, timing, opt_callback);
-        // snap.select('path.headoverlay.right').attr({
-        //   d: 'M20,20l20,20l-20,-20z'
-        // });
-        // snap.select('path.headoverlay.right').animate({
-        //   d: 'M20,20l20,20l20,-20z',
-        //   fill: colors.reds.light
-        // }, duration, timing, opt_callback);
-      }
 
       Polymer({
         is: 'zi-butterfly',
@@ -203,6 +347,13 @@
           auto: {
             type: Boolean,
             value: true
+          },
+          /**
+           * If we should skip the animation and render the butterfly right away
+           */
+          skipAnimation: {
+            type: Boolean,
+            value: false
           },
           /**
            * How much time we should wait to start the cacoon to imago
@@ -219,12 +370,41 @@
           transformationDuration: {
             type: Number,
             value: 1200
+          },
+
+          /**
+           * List of 4 colors to use as accent colors from light to dark in hex format.
+           * Note that the colors are used only once in initialization and no
+           * runtime change is detected or used.
+           * @type {Array<string>}
+           */
+          accentColors: {
+            type: Object
           }
+        },
+
+        __generateColorScheme: function(animationConfig) {
+          // make s deep copy of the default
+          const clone = JSON.parse(JSON.stringify(animationConfig));
+          for (let selector in clone) {
+            const config = clone[selector];
+            if (config.transformation && config.transformation.fill) {
+              config.transformation.fill = getColor(this, config.transformation.fill);
+            }
+            if (config.continuation)
+              config.continuation = this.__generateColorScheme(config.continuation);
+          }
+          return clone;
         },
 
         /** @override */
         attached: function() {
-          if (this.auto) this.__transform();
+          if (this.skipAnimation) {
+            // Create the rightside accent color config.
+            runWithoutAnimation(this.__generateColorScheme(rightside);, this.$.svg2);
+            runWithoutAnimation(leftside, this.$.svg);
+            this.__onTranformed();
+          } else if (this.auto) this.__transform();
         },
 
         /**
@@ -232,8 +412,10 @@
          */
         __transform: function() {
           this.async(function() {
-            phase1(Snap(this.$.svg), this.transformationDuration / 2);
-            phase3(Snap(this.$.svg2), this.transformationDuration / 2, function() {
+            Promise.all([
+              runAnimation(this.__generateColorScheme(rightside), this.$.svg2, this.transformationDuration / 2)
+              runAnimation(leftside, this.$.svg, this.transformationDuration / 2),
+            ]).then(function() {
               this.__onTranformed();
             }.bind(this));
           }, this.initialDelay * 1000);
@@ -243,7 +425,6 @@
          * The tranformation has ended, we can start butterfly wings.
          */
         __onTranformed: function() {
-          // console.log('we are ready', this);
           this.$.svg.classList.add('ready');
           this.$.svg2.classList.add('ready');
         }
