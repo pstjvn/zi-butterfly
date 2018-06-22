@@ -401,7 +401,7 @@
         attached: function() {
           if (this.skipAnimation) {
             // Create the rightside accent color config.
-            runWithoutAnimation(this.__generateColorScheme(rightside);, this.$.svg2);
+            runWithoutAnimation(this.__generateColorScheme(rightside), this.$.svg2);
             runWithoutAnimation(leftside, this.$.svg);
             this.__onTranformed();
           } else if (this.auto) this.__transform();
@@ -413,7 +413,7 @@
         __transform: function() {
           this.async(function() {
             Promise.all([
-              runAnimation(this.__generateColorScheme(rightside), this.$.svg2, this.transformationDuration / 2)
+              runAnimation(this.__generateColorScheme(rightside), this.$.svg2, this.transformationDuration / 2),
               runAnimation(leftside, this.$.svg, this.transformationDuration / 2),
             ]).then(function() {
               this.__onTranformed();
