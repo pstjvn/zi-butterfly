@@ -154,7 +154,7 @@
           },
           transformation: {
             d: 'M40,20l-20,20l-20,-20z',
-            fill: colors.greys.light
+            fill: 'light'
           }
         }
       };
@@ -163,34 +163,34 @@
         'path.tailoverlay.left': {
           transformation: {
             d: 'M40,60l20,20l-20,20z',
-            fill: colors.greys.light
+            fill: 'light'
           }
         },
 
         'path.tail.left': {
           transformation: {
-            fill: colors.greys.black
+            fill: 'black'
           }
         },
 
         'path.body.left': {
           transformation: {
             d: 'M60,40l-20,20l-20,-20z',
-            fill: colors.greys.dark
+            fill: 'dark'
           }
         },
 
         'path.head.left': {
           transformation: {
             d: 'M40,20l20,20l-40,0z',
-            fill: colors.greys.medium
+            fill: 'medium'
           }
         },
 
         'path.headoverlay.left': {
           transformation: {
             d: 'M40,20l20,20l-40,0z',
-            fill: colors.greys.medium
+            fill: 'medium'
           },
           continuation: continuation1
         },
@@ -246,11 +246,12 @@
        * Helper - given an instance of ZiButterfly returns either the
        * instance specified accent color or the default one.
        *
-       * @param {HTMLCustomElement<ZiButterfly>} instance
+       * @param {Array<string>} customColors
+       * @param {Object<string, string>} fallback
        * @param {string} type The type of color to retrieve.
        * @return {string}
        */
-      function getColor(instance, type) {
+      function getColor(customColors, fallback, type) {
         let index = 0;
         switch(type) {
           case 'light':
@@ -267,9 +268,9 @@
             break;
           default: throw new Error('Unknown type');
         }
-        if (instance.accentColors) {
-          return instance.accentColors[index];
-        } else return colors.reds[type];
+        if (customColors) {
+          return customColors[index];
+        } else return fallback[type];
       }
 
 
@@ -380,19 +381,28 @@
            */
           accentColors: {
             type: Object
-          }
+          },
+
+          /**
+           * Optional list of 4 colors to use for the greys from light to dark
+           * in hex format.
+           * Note that the colors are used only once in initialization and no
+           * runtime change is detected or used.
+           * @type {Array<string>}
+           */
+          colors: { type: Object }
         },
 
-        __generateColorScheme: function(animationConfig) {
+        __generateColorScheme: function(animationConfig, customColors, fallback) {
           // make s deep copy of the default
           const clone = JSON.parse(JSON.stringify(animationConfig));
           for (let selector in clone) {
             const config = clone[selector];
             if (config.transformation && config.transformation.fill) {
-              config.transformation.fill = getColor(this, config.transformation.fill);
+              config.transformation.fill = getColor(customColors, fallback, config.transformation.fill);
             }
             if (config.continuation)
-              config.continuation = this.__generateColorScheme(config.continuation);
+              config.continuation = this.__generateColorScheme(config.continuation, customColors, fallback);
           }
           return clone;
         },
@@ -401,8 +411,10 @@
         attached: function() {
           if (this.skipAnimation) {
             // Create the rightside accent color config.
-            runWithoutAnimation(this.__generateColorScheme(rightside), this.$.svg2);
-            runWithoutAnimation(leftside, this.$.svg);
+            runWithoutAnimation(this.__generateColorScheme(
+                rightside, this.accentColors, colors.reds), this.$.svg2);
+            runWithoutAnimation(this.__generateColorScheme(
+                leftside, this.colors, colors.greys), this.$.svg);
             this.__onTranformed();
           } else if (this.auto) this.__transform();
         },
@@ -413,8 +425,14 @@
         __transform: function() {
           this.async(function() {
             Promise.all([
-              runAnimation(this.__generateColorScheme(rightside), this.$.svg2, this.transformationDuration / 2),
-              runAnimation(leftside, this.$.svg, this.transformationDuration / 2),
+              runAnimation(this.__generateColorScheme(
+                  rightside, this.accentColors, colors.reds), 
+                  this.$.svg2, 
+                  this.transformationDuration / 2),
+              runAnimation(this.__generateColorScheme(
+                  leftside, this.colors, colors.greys),
+                  this.$.svg, 
+                  this.transformationDuration / 2),
             ]).then(function() {
               this.__onTranformed();
             }.bind(this));

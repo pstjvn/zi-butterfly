@@ -33,5 +33,24 @@
         </template>
       </demo-snippet>
     </div>
+
+    <div class="vertical-section-container centered">
+      <h3>Basic zi-butterfly demo</h3>
+      <demo-snippet>
+        <template>
+          <style>
+            zi-butterfly {
+              animation-delay: 1000ms;
+              animation-duration: 12s;
+              animation-iteration-count: infinite;
+            }
+          </style>
+          <zi-butterfly initial-delay="1" transformation-duration="3500"
+              colors='["#999999","#777777","#555555","#333333"]'
+              accent-colors='["#F967A3", "#F34A90", "#E43B81", "#C9286A"]'>
+          </zi-butterfly>
+        </template>
+      </demo-snippet>
+    </div>
   </body>
 </html>
